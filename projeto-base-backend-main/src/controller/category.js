@@ -10,7 +10,7 @@ const categoryController = {
         where: { userId },
         select: {
           id: true,
-          nome: true,
+          tipo: true,
           userId: true
         }
       });
@@ -34,7 +34,7 @@ const categoryController = {
         },
         select: {
           id: true,
-          nome: true,
+          tipo: true,
           userId: true
         }
       });
@@ -52,7 +52,7 @@ const categoryController = {
 
   async createCategory(req, res) {
     try {
-      const { nome } = req.body;
+      const { tipo, descricao, valor, status, data } = req.body;
       const userId = req.user.id;
 
       if (!nome) {
@@ -61,8 +61,12 @@ const categoryController = {
 
       const category = await prisma.category.create({
         data: {
-          nome,
-          userId
+          tipo: tipo,
+          userId: userId,
+          descricao: descricao,
+          valor: valor,
+          status: status,
+          data: data
         }
       });
 
@@ -70,7 +74,7 @@ const categoryController = {
         message: 'Categoria criada com sucesso',
         category: {
           id: category.id,
-          nome: category.nome,
+          nome: category.tipo,
           userId: category.userId
         }
       });
@@ -83,13 +87,13 @@ const categoryController = {
   async updateCategory(req, res) {
     try {
       const categoryId = parseInt(req.params.id);
-      const { nome } = req.body;
-      const userId = req.user.id;
+      const { tipo, status, descricao, valor, data, userId}= req.body;
+      const userIdreq = req.user.id;
 
       const existingCategory = await prisma.category.findFirst({
         where: {
           id: categoryId,
-          userId
+          userIdreq
         }
       });
 
@@ -104,7 +108,12 @@ const categoryController = {
       const category = await prisma.category.update({
         where: { id: categoryId },
         data: {
-          nome
+          tipo: tipo,
+          descricao: descricao,
+          valor: valor,
+          status: status,
+          data: data,
+          userId: userId
         }
       });
 
@@ -112,7 +121,7 @@ const categoryController = {
         message: 'Categoria atualizada com sucesso',
         category: {
           id: category.id,
-          nome: category.nome,
+          nome: category.tipo,
           userId: category.userId
         }
       });
