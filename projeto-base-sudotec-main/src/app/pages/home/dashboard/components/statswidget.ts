@@ -1,69 +1,149 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../../services/auth.service';
 
 @Component({
     standalone: true,
     selector: 'app-stats-widget',
     imports: [CommonModule],
-    template: `<div class="col-span-12 lg:col-span-6 xl:col-span-3">
-            <div class="card mb-0">
-                <div class="flex justify-between mb-4">
-                    <div>
-                        <span class="block text-muted-color font-medium mb-4">Orders</span>
-                        <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">152</div>
-                    </div>
-                    <div class="flex items-center justify-center bg-blue-100 dark:bg-blue-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-shopping-cart text-blue-500 text-xl!"></i>
+    template: `
+        <div class="col-span-12">
+            <div class="p-4 bg-surface-50 dark:bg-surface-950">
+
+                <!-- Loading State -->
+                <div *ngIf="isLoading" class="flex justify-center items-center py-10">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-fuchsia-500 mx-auto mb-3"></div>
+                        <p class="text-surface-600 dark:text-surface-400 text-sm">Carregando perfil...</p>
                     </div>
                 </div>
-                <span class="text-primary font-medium">24 new </span>
-                <span class="text-muted-color">since last visit</span>
+
+                <div *ngIf="!isLoading" class="space-y-4 max-w-4xl">
+                    <!-- Profile Card -->
+                    <div class="bg-surface-0 dark:bg-surface-900 p-6 rounded-xl shadow-sm border border-surface-200 dark:border-surface-700">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 bg-fuchsia-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                                {{ userInitial }}
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">{{ user.username || 'Usuário' }}</h2>
+                                <p class="text-surface-600 dark:text-surface-400 text-sm">{{ user.role || 'Usuário' }} - {{ user.department || 'Não definido' }}</p>
+                                <p class="text-surface-500 dark:text-surface-500 text-xs mt-1" *ngIf="user.joinedDate">Membro desde {{ user.joinedDate }}</p>
+                                <p class="text-surface-500 dark:text-surface-500 text-xs">
+                                    {{ user.isAdmin ? 'Administrador' : 'Usuário' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informações Pessoais -->
+                    <div class="bg-surface-0 dark:bg-surface-900 p-6 rounded-xl shadow-sm border border-surface-200 dark:border-surface-700">
+                        <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-0 mb-4">Informações Pessoais</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Nome Completo</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none text-sm">
+                                    {{ user.name || 'Não informado' }}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Username</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none text-sm">
+                                    {{ user.username || 'Não informado' }}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Email</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none text-sm">
+                                    {{ user.email || 'Não informado' }}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Telefone</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none text-sm">
+                                    {{ user.phone || 'Não informado' }}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Departamento</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none text-sm">
+                                    {{ user.department || 'Não informado' }}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Cargo</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none text-sm">
+                                    {{ user.role || 'Não informado' }}
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-1 md:col-span-2">
+                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Biografia</label>
+                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none min-h-[60px] text-sm">
+                                    {{ user.bio || 'Nenhuma biografia informada' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-span-12 lg:col-span-6 xl:col-span-3">
-            <div class="card mb-0">
-                <div class="flex justify-between mb-4">
-                    <div>
-                        <span class="block text-muted-color font-medium mb-4">Revenue</span>
-                        <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">$2.100</div>
-                    </div>
-                    <div class="flex items-center justify-center bg-orange-100 dark:bg-orange-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-dollar text-orange-500 text-xl!"></i>
-                    </div>
-                </div>
-                <span class="text-primary font-medium">%52+ </span>
-                <span class="text-muted-color">since last week</span>
-            </div>
-        </div>
-        <div class="col-span-12 lg:col-span-6 xl:col-span-3">
-            <div class="card mb-0">
-                <div class="flex justify-between mb-4">
-                    <div>
-                        <span class="block text-muted-color font-medium mb-4">Customers</span>
-                        <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">28441</div>
-                    </div>
-                    <div class="flex items-center justify-center bg-cyan-100 dark:bg-cyan-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-users text-cyan-500 text-xl!"></i>
-                    </div>
-                </div>
-                <span class="text-primary font-medium">520 </span>
-                <span class="text-muted-color">newly registered</span>
-            </div>
-        </div>
-        <div class="col-span-12 lg:col-span-6 xl:col-span-3">
-            <div class="card mb-0">
-                <div class="flex justify-between mb-4">
-                    <div>
-                        <span class="block text-muted-color font-medium mb-4">Comments</span>
-                        <div class="text-surface-900 dark:text-surface-0 font-medium text-xl">152 Unread</div>
-                    </div>
-                    <div class="flex items-center justify-center bg-purple-100 dark:bg-purple-400/10 rounded-border" style="width: 2.5rem; height: 2.5rem">
-                        <i class="pi pi-comment text-purple-500 text-xl!"></i>
-                    </div>
-                </div>
-                <span class="text-primary font-medium">85 </span>
-                <span class="text-muted-color">responded</span>
-            </div>
-        </div>`
+    `
 })
-export class StatsWidget {}
+export class StatsWidget implements OnInit {
+    private authService = inject(AuthService);
+
+    isLoading = true;
+    userInitial = 'U';
+    
+    user = {
+        id: 0,
+        name: '',
+        email: '',
+        phone: '',
+        department: '',
+        role: '',
+        bio: '',
+        joinedDate: '',
+        username: '',
+        isAdmin: false
+    };
+
+    ngOnInit() {
+        this.loadUserProfile();
+    }
+
+    loadUserProfile() {
+        this.isLoading = true;
+        
+        // Simula carregamento dos dados do usuário
+        setTimeout(() => {
+            const authUser = this.authService.getUserData();
+            
+            if (authUser) {
+                this.user = {
+                    id: authUser.id,
+                    username: authUser.username,
+                    name: authUser.username,
+                    email: 'usuario@exemplo.com',
+                    phone: '(11) 99999-9999',
+                    department: 'Desenvolvimento',
+                    role: 'Desenvolvedor',
+                    bio: 'Usuário do sistema Capsa Desk',
+                    joinedDate: new Date().toLocaleDateString('pt-BR'),
+                    isAdmin: authUser.isAdmin
+                };
+                
+                this.userInitial = this.user.username.charAt(0).toUpperCase();
+            }
+            
+            this.isLoading = false;
+        }, 800);
+    }
+}
