@@ -10,10 +10,10 @@ datasource db {
 model User {
   id          Int          @id @default(autoincrement())
   username    String       @unique
-  email       String
-  phone       String       @unique
-  department  String
-  role        String
+  email       String?
+  phone       String?       @unique
+  department  String?
+  role        String?
   name        String
   password    String
   isAdmin     Boolean      @default(false)

@@ -1,3 +1,4 @@
+// routes/users.js
 const express = require('express');
 const userController = require('../controller/user');
 const authMiddleware = require('../middlewares/auth');
@@ -7,6 +8,9 @@ const router = express.Router();
 
 // Todas as rotas requerem autenticação
 router.use(authMiddleware);
+
+// GET /users/me - Buscar o próprio usuário (não requer admin)
+router.get('/me', userController.getCurrentUser);
 
 // GET /users - Listar todos os usuários (requer admin)
 router.get('/', adminMiddleware, userController.getUsers);
@@ -21,4 +25,3 @@ router.delete('/:id', adminMiddleware, userController.deleteUser);
 router.patch('/:id/admin', adminMiddleware, userController.updateUserAdmin);
 
 module.exports = router;
-

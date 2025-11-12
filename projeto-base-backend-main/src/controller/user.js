@@ -50,6 +50,39 @@ const userController = {
         }
     },
 
+    async getCurrentUser(req, res) {
+        try {
+            const userId = req.user.id;
+
+            console.log('Buscando usuário atual ID:', userId);
+
+            const user = await prisma.user.findUnique({
+                where: { 
+                    id: parseInt(userId) 
+                }
+            });
+
+            if (!user) {
+                return res.status(404).json({ 
+                    error: 'Usuário não encontrado' 
+                });
+            }
+
+            // Remove a senha por segurança
+            const { password, ...userWithoutPassword } = user;
+
+            console.log('Usuário atual encontrado:', userWithoutPassword.username);
+
+            res.status(200).json(userWithoutPassword);
+        } catch (error) {
+            console.error('Erro ao buscar usuário atual:', error);
+            res.status(500).json({ 
+                error: 'Erro interno do servidor',
+                details: error.message 
+            });
+        }
+    },
+
     async getUsers(req, res) {
         try {
             const users = await prisma.user.findMany({
@@ -77,19 +110,17 @@ const userController = {
             }
 
             const user = await prisma.user.findUnique({
-                where: {id: userId},
-                select: {
-                    id: true,
-                    username: true,
-                    isAdmin: true
-                }
+                where: {id: userId}
             });
 
             if (!user) {
                 return res.status(404).json({error: 'Usuário não encontrado'});
             }
 
-            res.status(200).json(user);
+            // Remove a senha
+            const { password, ...userWithoutPassword } = user;
+
+            res.status(200).json(userWithoutPassword);
         } catch (error) {
             console.error('Erro ao buscar usuário:', error);
             res.status(500).json({error: 'Erro interno do servidor'});
@@ -148,15 +179,13 @@ const userController = {
 
             const updatedUser = await prisma.user.update({
                 where: {id: userId},
-                data: {isAdmin},
-                select: {
-                    id: true,
-                    username: true,
-                    isAdmin: true
-                }
+                data: {isAdmin}
             });
 
-            res.status(200).json(updatedUser);
+            // Remove a senha
+            const { password, ...userWithoutPassword } = updatedUser;
+
+            res.status(200).json(userWithoutPassword);
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             res.status(500).json({error: 'Erro interno do servidor'});
