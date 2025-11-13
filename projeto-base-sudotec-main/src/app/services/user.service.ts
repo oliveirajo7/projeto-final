@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { UserData } from '@/models/auth.model';
+import { UserData, UserProfile } from '@/models/auth.model';
 
 @Injectable({
     providedIn: 'root'
@@ -11,31 +11,44 @@ export class UserService {
     private http = inject(HttpClient);
 
     /**
-     * Lista todos os usuários
+     * Busca o perfil do usuário logado
      */
-    getUsers(): Observable<UserData[]> {
-        return this.http.get<UserData[]>(this.apiUrl);
+    getMyProfile(): Observable<UserProfile> {
+        return this.http.get<UserProfile>(`${this.apiUrl}/me`);
     }
 
     /**
-     * Busca um usuário por ID
+     * Atualiza o perfil do usuário logado
      */
-    getUserById(id: number): Observable<UserData> {
-        return this.http.get<UserData>(`${this.apiUrl}/${id}`);
+    updateMyProfile(profileData: Partial<UserProfile>): Observable<{message: string, user: UserProfile}> {
+        return this.http.put<{message: string, user: UserProfile}>(`${this.apiUrl}/me`, profileData);
     }
 
     /**
-     * Deleta um usuário
+     * Lista todos os usuários (apenas admin)
+     */
+    getUsers(): Observable<UserProfile[]> {  // Mudado para UserProfile[]
+        return this.http.get<UserProfile[]>(this.apiUrl);
+    }
+
+    /**
+     * Busca um usuário por ID (apenas admin)
+     */
+    getUserById(id: number): Observable<UserProfile> {
+        return this.http.get<UserProfile>(`${this.apiUrl}/${id}`);
+    }
+
+    /**
+     * Deleta um usuário (apenas admin)
      */
     deleteUser(id: number): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
     /**
-     * Atualiza status de admin de um usuário
+     * Atualiza status de admin de um usuário (apenas admin)
      */
-    updateUserAdmin(id: number, isAdmin: boolean): Observable<UserData> {
-        return this.http.patch<UserData>(`${this.apiUrl}/${id}/admin`, { isAdmin });
+    updateUserAdmin(id: number, isAdmin: boolean): Observable<UserProfile> {
+        return this.http.patch<UserProfile>(`${this.apiUrl}/${id}/admin`, { isAdmin });
     }
 }
-

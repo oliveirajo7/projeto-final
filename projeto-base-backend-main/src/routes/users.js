@@ -1,4 +1,3 @@
-// routes/users.js
 const express = require('express');
 const userController = require('../controller/user');
 const authMiddleware = require('../middlewares/auth');
@@ -6,22 +5,33 @@ const adminMiddleware = require('../middlewares/admin');
 
 const router = express.Router();
 
-// Todas as rotas requerem autenticação
-router.use(authMiddleware);
+// Rotas públicas
+router.post('/register', userController.register);
 
-// GET /users/me - Buscar o próprio usuário (não requer admin)
-router.get('/me', userController.getCurrentUser);
+// Rotas que requerem apenas autenticação
+router.get('/me', authMiddleware, (req, res, next) => {
+  userController.getMyProfile(req, res).catch(next);
+});
 
-// GET /users - Listar todos os usuários (requer admin)
-router.get('/', adminMiddleware, userController.getUsers);
+router.put('/me', authMiddleware, (req, res, next) => {
+  userController.updateMyProfile(req, res).catch(next);
+});
 
-// GET /users/:id - Buscar usuário por ID (requer admin)
-router.get('/:id', adminMiddleware, userController.getUserById);
+// Rotas que requerem admin
+router.get('/', authMiddleware, adminMiddleware, (req, res, next) => {
+  userController.getUsers(req, res).catch(next);
+});
 
-// DELETE /users/:id - Deletar usuário (requer admin)
-router.delete('/:id', adminMiddleware, userController.deleteUser);
+router.get('/:id', authMiddleware, adminMiddleware, (req, res, next) => {
+  userController.getUserById(req, res).catch(next);
+});
 
-// PATCH /users/:id/admin - Atualizar status de admin (requer admin)
-router.patch('/:id/admin', adminMiddleware, userController.updateUserAdmin);
+router.delete('/:id', authMiddleware, adminMiddleware, (req, res, next) => {
+  userController.deleteUser(req, res).catch(next);
+});
+
+router.patch('/:id/admin', authMiddleware, adminMiddleware, (req, res, next) => {
+  userController.updateUserAdmin(req, res).catch(next);
+});
 
 module.exports = router;

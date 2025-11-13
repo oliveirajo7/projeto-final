@@ -1,41 +1,46 @@
-// middlewares/auth.js
-const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-const authMiddleware = (req, res, next) => {
-    try {
-        const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+const authMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
 
-        console.log('Token recebido:', token ? 'Presente' : 'Ausente');
-        
-        if (!token) {
-            console.log('Token não fornecido');
-            return res.status(401).json({ error: 'Token de acesso requerido' });
-        }
-
-        // Verifica o token JWT
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'seu_segredo_aqui');
-        console.log('Token decodificado:', decoded);
-        
-        // Adiciona os dados do usuário no request
-        req.user = {
-            id: decoded.id,
-            username: decoded.username,
-            isAdmin: decoded.isAdmin
-        };
-        
-        next();
-    } catch (error) {
-        console.error('Erro na autenticação:', error.message);
-        
-        if (error.name === 'JsonWebTokenError') {
-            return res.status(403).json({ error: 'Token inválido' });
-        } else if (error.name === 'TokenExpiredError') {
-            return res.status(403).json({ error: 'Token expirado' });
-        } else {
-            return res.status(403).json({ error: 'Falha na autenticação' });
-        }
+    if (!authHeader || !authHeader.startsWith('Basic ')) {
+      return res.status(401).json({ error: 'Token de autenticação necessário' });
     }
+
+    const token = authHeader.substring(6);
+    const decoded = Buffer.from(token, 'base64').toString('utf-8');
+    const [username, password] = decoded.split(':');
+
+    if (!username || !password) {
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    // BUSCAR TODOS os usuários e fazer match manual
+    const allUsers = await prisma.user.findMany();
+    console.log('👥 Todos os usuários no banco:', allUsers.map(u => u.username));
+
+    const user = allUsers.find(u => 
+      u.username.toLowerCase() === username.trim().toLowerCase()
+    );
+
+    console.log('🎯 Usuário encontrado:', user);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    if (user.password !== password) {
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Erro no middleware de autenticação:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
 };
 
 module.exports = authMiddleware;

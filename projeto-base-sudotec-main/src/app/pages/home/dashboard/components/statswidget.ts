@@ -1,6 +1,8 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../../../services/auth.service';
+import { AuthService } from '@/services/auth.service';
+import { UserService } from '@/services/user.service';
+import { UserProfile } from '@/models/auth.model';
 
 @Component({
     standalone: true,
@@ -18,7 +20,19 @@ import { AuthService } from '../../../../services/auth.service';
                     </div>
                 </div>
 
-                <div *ngIf="!isLoading" class="space-y-4 max-w-4xl">
+                <!-- Error State -->
+                <div *ngIf="error && !isLoading" class="flex justify-center items-center py-10">
+                    <div class="text-center">
+                        <div class="text-red-500 text-lg mb-2">⚠️</div>
+                        <p class="text-surface-600 dark:text-surface-400 text-sm">{{ error }}</p>
+                        <button (click)="loadUserProfile()" 
+                                class="mt-3 px-4 py-2 bg-fuchsia-500 text-white rounded hover:bg-fuchsia-600 text-sm">
+                            Tentar Novamente
+                        </button>
+                    </div>
+                </div>
+
+                <div *ngIf="!isLoading && !error" class="space-y-4 max-w-4xl">
                     <!-- Profile Card -->
                     <div class="bg-surface-0 dark:bg-surface-900 p-6 rounded-xl shadow-sm border border-surface-200 dark:border-surface-700">
                         <div class="flex items-center gap-4">
@@ -26,10 +40,12 @@ import { AuthService } from '../../../../services/auth.service';
                                 {{ userInitial }}
                             </div>
                             <div>
-                                <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">{{ user.username || 'Usuário' }}</h2>
-                                <p class="text-surface-600 dark:text-surface-400 text-sm">{{ user.role || 'Usuário' }} - {{ user.department || 'Não definido' }}</p>
-                                <p class="text-surface-500 dark:text-surface-500 text-xs mt-1" *ngIf="user.joinedDate">Membro desde {{ user.joinedDate }}</p>
-                                <p class="text-surface-500 dark:text-surface-500 text-xs">
+                                <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0">{{ user.name || user.username }}</h2>
+                                <p class="text-surface-600 dark:text-surface-400 text-sm">
+                                    {{ user.role || 'Usuário' }} 
+                                    <span *ngIf="user.department">- {{ user.department }}</span>
+                                </p>
+                                <p class="text-surface-500 dark:text-surface-500 text-xs mt-1">
                                     {{ user.isAdmin ? 'Administrador' : 'Usuário' }}
                                 </p>
                             </div>
@@ -82,13 +98,6 @@ import { AuthService } from '../../../../services/auth.service';
                                     {{ user.role || 'Não informado' }}
                                 </div>
                             </div>
-                            
-                            <div class="space-y-1 md:col-span-2">
-                                <label class="block text-xs font-medium text-surface-700 dark:text-surface-300">Biografia</label>
-                                <div class="w-full px-3 py-2 bg-surface-100 dark:bg-surface-800 rounded text-surface-900 dark:text-surface-0 border-none min-h-[60px] text-sm">
-                                    {{ user.bio || 'Nenhuma biografia informada' }}
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -98,20 +107,20 @@ import { AuthService } from '../../../../services/auth.service';
 })
 export class StatsWidget implements OnInit {
     private authService = inject(AuthService);
+    private userService = inject(UserService);
 
     isLoading = true;
+    error = '';
     userInitial = 'U';
     
-    user = {
+    user: UserProfile = {
         id: 0,
+        username: '',
         name: '',
         email: '',
         phone: '',
         department: '',
         role: '',
-        bio: '',
-        joinedDate: '',
-        username: '',
         isAdmin: false
     };
 
@@ -121,29 +130,19 @@ export class StatsWidget implements OnInit {
 
     loadUserProfile() {
         this.isLoading = true;
+        this.error = '';
         
-        // Simula carregamento dos dados do usuário
-        setTimeout(() => {
-            const authUser = this.authService.getUserData();
-            
-            if (authUser) {
-                this.user = {
-                    id: authUser.id,
-                    username: authUser.username,
-                    name: authUser.username,
-                    email: 'usuario@exemplo.com',
-                    phone: '(11) 99999-9999',
-                    department: 'Desenvolvimento',
-                    role: 'Desenvolvedor',
-                    bio: 'Usuário do sistema Capsa Desk',
-                    joinedDate: new Date().toLocaleDateString('pt-BR'),
-                    isAdmin: authUser.isAdmin
-                };
-                
-                this.userInitial = this.user.username.charAt(0).toUpperCase();
+        this.userService.getMyProfile().subscribe({
+            next: (userData) => {
+                this.user = userData;
+                this.userInitial = (userData.name || userData.username).charAt(0).toUpperCase();
+                this.isLoading = false;
+            },
+            error: (err) => {
+                this.error = err.error?.error || 'Erro ao carregar perfil';
+                this.isLoading = false;
+                console.error('Erro ao carregar perfil:', err);
             }
-            
-            this.isLoading = false;
-        }, 800);
+        });
     }
 }

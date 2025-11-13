@@ -1,32 +1,42 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TableModule } from 'primeng/table';
+import { RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToolbarModule } from 'primeng/toolbar';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
-import { ConfirmDialog } from 'primeng/confirmdialog';
-import { MessageService, ConfirmationService } from 'primeng/api';
 import { UserService } from '@/services/user.service';
 import { AuthService } from '@/services/auth.service';
-import { UserData } from '@/models/auth.model';
-import { Toolbar } from 'primeng/toolbar';
+import { UserProfile } from '@/models/auth.model';
 
 @Component({
     selector: 'app-users-list',
     standalone: true,
-    imports: [CommonModule, TableModule, ButtonModule, TagModule, Toast, ConfirmDialog, Toolbar],
+    imports: [
+        CommonModule, 
+        RouterModule, 
+        ButtonModule, 
+        TableModule, 
+        TagModule, 
+        ToolbarModule,
+        ConfirmDialogModule,
+        Toast
+    ],
     templateUrl: './users-list.html',
     providers: [MessageService, ConfirmationService]
 })
 export class UsersList implements OnInit {
-    userService = inject(UserService);
-    authService = inject(AuthService);
-    messageService = inject(MessageService);
-    confirmationService = inject(ConfirmationService);
+    private userService = inject(UserService);
+    private authService = inject(AuthService);
+    private messageService = inject(MessageService);
+    private confirmationService = inject(ConfirmationService);
 
-    users: UserData[] = [];
-    loading: boolean = false;
-    currentUserId: number = 0;
+    users: UserProfile[] = [];
+    loading = true;
+    currentUserId = 0;
 
     ngOnInit() {
         this.currentUserId = this.authService.getUserData()?.id || 0;
@@ -36,99 +46,100 @@ export class UsersList implements OnInit {
     loadUsers() {
         this.loading = true;
         this.userService.getUsers().subscribe({
-            next: (users) => {
+            next: (users: UserProfile[]) => {
                 this.users = users;
                 this.loading = false;
             },
-            error: () => {
+            error: (err) => {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Erro',
-                    detail: 'Erro ao carregar usuários'
+                    detail: 'Erro ao carregar usuários: ' + (err.error?.error || 'Erro desconhecido')
                 });
                 this.loading = false;
             }
         });
     }
 
-    confirmDelete(user: UserData) {
-        if (user.id === this.currentUserId) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Atenção',
-                detail: 'Você não pode deletar seu próprio usuário'
-            });
-            return;
-        }
+    // MÉTODOS NOVOS PARA O TEMPLATE
+    getAdminLabel(isAdmin: boolean): string {
+        return isAdmin ? 'Administrador' : 'Usuário';
+    }
 
+    getSeverity(isAdmin: boolean): string {
+        return isAdmin ? 'danger' : 'info';
+    }
+
+    confirmDelete(user: UserProfile) {
         this.confirmationService.confirm({
-            message: `Tem certeza que deseja deletar o usuário "${user.username}"?`,
+            message: `Tem certeza que deseja deletar o usuário <strong>${user.username}</strong>? Esta ação não pode ser desfeita.`,
             header: 'Confirmar Exclusão',
             icon: 'pi pi-exclamation-triangle',
-            acceptLabel: 'Sim',
-            rejectLabel: 'Não',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-secondary',
             accept: () => {
                 this.deleteUser(user.id);
             }
         });
     }
 
-    deleteUser(id: number) {
-        this.userService.deleteUser(id).subscribe({
+    deleteUser(userId: number) {
+        this.userService.deleteUser(userId).subscribe({
             next: () => {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Sucesso',
                     detail: 'Usuário deletado com sucesso'
                 });
-                this.loadUsers();
+                this.loadUsers(); // Recarregar a lista
             },
             error: (err) => {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Erro',
-                    detail: err.error?.error || 'Erro ao deletar usuário'
+                    detail: 'Erro ao deletar usuário: ' + (err.error?.error || 'Erro desconhecido')
                 });
             }
         });
     }
 
-    toggleAdmin(user: UserData) {
-        if (user.id === this.currentUserId) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Atenção',
-                detail: 'Você não pode alterar seu próprio status de admin'
-            });
-            return;
-        }
-
+    toggleAdmin(user: UserProfile) {
         const newAdminStatus = !user.isAdmin;
-        this.userService.updateUserAdmin(user.id, newAdminStatus).subscribe({
-            next: () => {
+        const action = newAdminStatus ? 'tornar administrador' : 'remover administrador';
+        
+        this.confirmationService.confirm({
+            message: `Tem certeza que deseja ${action} o usuário <strong>${user.username}</strong>?`,
+            header: 'Confirmar Alteração',
+            icon: 'pi pi-exclamation-triangle',
+            acceptButtonStyleClass: newAdminStatus ? 'p-button-success' : 'p-button-warning',
+            rejectButtonStyleClass: 'p-button-secondary',
+            accept: () => {
+                this.updateUserAdmin(user.id, newAdminStatus);
+            }
+        });
+    }
+
+    updateUserAdmin(userId: number, isAdmin: boolean) {
+        this.userService.updateUserAdmin(userId, isAdmin).subscribe({
+            next: (updatedUser) => {
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Sucesso',
-                    detail: `Status de admin ${newAdminStatus ? 'concedido' : 'removido'} com sucesso`
+                    detail: `Usuário ${updatedUser.username} ${isAdmin ? 'tornou-se administrador' : 'foi removido dos administradores'}`
                 });
-                this.loadUsers();
+                this.loadUsers(); // Recarregar a lista para refletir mudanças
             },
             error: (err) => {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Erro',
-                    detail: err.error?.error || 'Erro ao atualizar usuário'
+                    detail: 'Erro ao atualizar usuário: ' + (err.error?.error || 'Erro desconhecido')
                 });
             }
         });
     }
 
-    getSeverity(isAdmin: boolean): string {
-        return isAdmin ? 'success' : 'secondary';
-    }
-
-    getAdminLabel(isAdmin: boolean): string {
-        return isAdmin ? 'Admin' : 'Usuário';
+    isCurrentUser(userId: number): boolean {
+        return userId === this.currentUserId;
     }
 }
-

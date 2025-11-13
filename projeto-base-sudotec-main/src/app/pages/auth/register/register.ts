@@ -24,6 +24,11 @@ export class Register {
 
     registerForm = this.formBuilder.group({
         username: ['', [Validators.required, Validators.minLength(3)]],
+        name: ['', [Validators.required, Validators.minLength(2)]],
+        email: ['', [Validators.email]],
+        phone: [''],
+        department: [''],
+        role: [''],
         password: ['', [Validators.required, Validators.minLength(4)]],
         confirmPassword: ['', [Validators.required]]
     });
@@ -33,7 +38,7 @@ export class Register {
             this.messageService.add({
                 severity: 'info',
                 summary: 'Informação',
-                detail: 'Preencha todos os campos corretamente'
+                detail: 'Preencha todos os campos obrigatórios corretamente'
             });
             return;
         }
@@ -52,7 +57,12 @@ export class Register {
 
         const registerInput: RegisterInput = {
             username: this.registerForm.get('username')?.value || '',
-            password: password || ''
+            password: password || '',
+            name: this.registerForm.get('name')?.value || '',
+            email: this.registerForm.get('email')?.value || undefined,
+            phone: this.registerForm.get('phone')?.value || undefined,
+            department: this.registerForm.get('department')?.value || undefined,
+            role: this.registerForm.get('role')?.value || undefined
         };
 
         this.registerService.register(registerInput).subscribe({

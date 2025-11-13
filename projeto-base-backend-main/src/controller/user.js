@@ -8,21 +8,29 @@ const userController = {
             user: {
                 id: req.user.id,
                 username: req.user.username,
-                isAdmin: req.user.isAdmin
+                name: req.user.name, // ADICIONAR ESTE CAMPO
+                email: req.user.email,
+                phone: req.user.phone,
+                department: req.user.department,
+                role: req.user.role,
+                isAdmin: req.user.isAdmin,
+                token: Buffer.from(`${req.user.username}:${req.user.password}`).toString('base64') // Gerar token
             }
         });
     },
 
     async register(req, res) {
         try {
-            const {username, password} = req.body;
+            const { username, password, name, email, phone, department, role } = req.body;
+
+            console.log('Dados recebidos no cadastro:', req.body); // DEBUG
 
             if (!username || !password) {
-                return res.status(400).json({error: 'Username e password são obrigatórios'});
+                return res.status(400).json({ error: 'Username e password são obrigatórios' });
             }
 
             if (password.length < 4) {
-                return res.status(400).json({error: 'Password deve ter no mínimo 4 caracteres'});
+                return res.status(400).json({ error: 'Password deve ter no mínimo 4 caracteres' });
             }
 
             const userCount = await prisma.user.count();
@@ -32,9 +40,16 @@ const userController = {
                 data: {
                     username,
                     password,
+                    name: name || username, // Se não enviar name, usa username
+                    email: email || null,
+                    phone: phone || null,
+                    department: department || null,
+                    role: role || 'Usuário',
                     isAdmin
                 }
             });
+
+            console.log('Usuário criado com sucesso:', user.id); // DEBUG
 
             res.status(201).json({
                 message: 'Usuário criado com sucesso',
@@ -42,44 +57,87 @@ const userController = {
                 isAdmin: user.isAdmin
             });
         } catch (error) {
+            console.error('Erro detalhado ao registrar usuário:', error);
             if (error.code === 'P2002') {
-                return res.status(400).json({error: 'Username já existe'});
+                const field = error.meta?.target?.[0];
+                if (field === 'username') {
+                    return res.status(400).json({ error: 'Username já existe' });
+                } else if (field === 'phone') {
+                    return res.status(400).json({ error: 'Telefone já existe' });
+                }
+                return res.status(400).json({ error: 'Dados duplicados' });
             }
-            console.error('Erro ao registrar usuário:', error);
-            res.status(500).json({error: 'Erro interno do servidor'});
+            res.status(500).json({ error: 'Erro interno do servidor: ' + error.message });
         }
     },
 
-    async getCurrentUser(req, res) {
+    // NOVO: Buscar dados completos do usuário logado
+    async getMyProfile(req, res) {
         try {
             const userId = req.user.id;
 
-            console.log('Buscando usuário atual ID:', userId);
-
             const user = await prisma.user.findUnique({
-                where: { 
-                    id: parseInt(userId) 
+                where: { id: userId },
+                select: {
+                    id: true,
+                    username: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    department: true,
+                    role: true,
+                    isAdmin: true
                 }
             });
 
             if (!user) {
-                return res.status(404).json({ 
-                    error: 'Usuário não encontrado' 
-                });
+                return res.status(404).json({error: 'Usuário não encontrado'});
             }
 
-            // Remove a senha por segurança
-            const { password, ...userWithoutPassword } = user;
-
-            console.log('Usuário atual encontrado:', userWithoutPassword.username);
-
-            res.status(200).json(userWithoutPassword);
+            res.status(200).json(user);
         } catch (error) {
-            console.error('Erro ao buscar usuário atual:', error);
-            res.status(500).json({ 
-                error: 'Erro interno do servidor',
-                details: error.message 
+            console.error('Erro ao buscar perfil:', error);
+            res.status(500).json({error: 'Erro interno do servidor'});
+        }
+    },
+
+    // NOVO: Atualizar perfil do usuário
+    async updateMyProfile(req, res) {
+        try {
+            const userId = req.user.id;
+            const { name, email, phone, department, role } = req.body;
+
+            const updatedUser = await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    name,
+                    email,
+                    phone,
+                    department,
+                    role
+                },
+                select: {
+                    id: true,
+                    username: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    department: true,
+                    role: true,
+                    isAdmin: true
+                }
             });
+
+            res.status(200).json({
+                message: 'Perfil atualizado com sucesso',
+                user: updatedUser
+            });
+        } catch (error) {
+            if (error.code === 'P2002') {
+                return res.status(400).json({error: 'Telefone já está em uso por outro usuário'});
+            }
+            console.error('Erro ao atualizar perfil:', error);
+            res.status(500).json({error: 'Erro interno do servidor'});
         }
     },
 
@@ -89,6 +147,11 @@ const userController = {
                 select: {
                     id: true,
                     username: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    department: true,
+                    role: true,
                     isAdmin: true
                 }
             });
@@ -110,17 +173,24 @@ const userController = {
             }
 
             const user = await prisma.user.findUnique({
-                where: {id: userId}
+                where: {id: userId},
+                select: {
+                    id: true,
+                    username: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    department: true,
+                    role: true,
+                    isAdmin: true
+                }
             });
 
             if (!user) {
                 return res.status(404).json({error: 'Usuário não encontrado'});
             }
 
-            // Remove a senha
-            const { password, ...userWithoutPassword } = user;
-
-            res.status(200).json(userWithoutPassword);
+            res.status(200).json(user);
         } catch (error) {
             console.error('Erro ao buscar usuário:', error);
             res.status(500).json({error: 'Erro interno do servidor'});
@@ -179,13 +249,20 @@ const userController = {
 
             const updatedUser = await prisma.user.update({
                 where: {id: userId},
-                data: {isAdmin}
+                data: {isAdmin},
+                select: {
+                    id: true,
+                    username: true,
+                    name: true,
+                    email: true,
+                    phone: true,
+                    department: true,
+                    role: true,
+                    isAdmin: true
+                }
             });
 
-            // Remove a senha
-            const { password, ...userWithoutPassword } = updatedUser;
-
-            res.status(200).json(userWithoutPassword);
+            res.status(200).json(updatedUser);
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             res.status(500).json({error: 'Erro interno do servidor'});

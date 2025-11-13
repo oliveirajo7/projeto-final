@@ -1,7 +1,7 @@
 <p-toast position="bottom-center" />
 
 <div class="bg-surface-950 flex items-center justify-center min-h-screen min-w-screen overflow-hidden p-4">
-    <div class="flex flex-col items-center justify-center w-full max-w-md">
+    <div class="flex flex-col items-center justify-center w-full max-w-2xl">
         <div class="w-full rounded-[32px] p-0.5 bg-gradient-to-b from-fuchsia-500 to-transparent to-30%">
             <div class="w-full bg-surface-0 dark:bg-surface-900 py-6 px-4 sm:py-8 sm:px-8 md:px-12 lg:px-20" style="border-radius: 29px">
                 <div class="text-center mb-6 sm:mb-8">
@@ -15,44 +15,125 @@
 
                 <div>
                     <form [formGroup]="registerForm">
-                        <label for="username"
-                               class="block text-surface-900 dark:text-surface-0 text-base sm:text-lg md:text-xl font-medium mb-2">
-                            Usuário
-                        </label>
-                        <input pInputText
-                               id="username"
-                               formControlName="username"
-                               type="text"
-                               placeholder="Nome de usuário (mínimo 3 caracteres)"
-                               class="w-full mb-4 sm:mb-6" />
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <!-- Coluna 1 -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="username"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Usuário *
+                                    </label>
+                                    <input pInputText
+                                           id="username"
+                                           formControlName="username"
+                                           type="text"
+                                           placeholder="Nome de usuário (mín. 3 caracteres)"
+                                           class="w-full" />
+                                </div>
 
-                        <label for="password"
-                               class="block text-surface-900 dark:text-surface-0 font-medium text-base sm:text-lg md:text-xl mb-2">
-                            Senha
-                        </label>
-                        <p-password
-                            id="password"
-                            formControlName="password"
-                            placeholder="Senha (mínimo 4 caracteres)"
-                            [toggleMask]="true"
-                            styleClass="mb-4"
-                            [fluid]="true"
-                            [feedback]="true">
-                        </p-password>
+                                <div>
+                                    <label for="name"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Nome Completo *
+                                    </label>
+                                    <input pInputText
+                                           id="name"
+                                           formControlName="name"
+                                           type="text"
+                                           placeholder="Seu nome completo"
+                                           class="w-full" />
+                                </div>
 
-                        <label for="confirmPassword"
-                               class="block text-surface-900 dark:text-surface-0 font-medium text-base sm:text-lg md:text-xl mb-2">
-                            Confirmar Senha
-                        </label>
-                        <p-password
-                            id="confirmPassword"
-                            formControlName="confirmPassword"
-                            placeholder="Confirme sua senha"
-                            [toggleMask]="true"
-                            styleClass="mb-4 sm:mb-6 md:mb-8"
-                            [fluid]="true"
-                            [feedback]="false">
-                        </p-password>
+                                <div>
+                                    <label for="email"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Email
+                                    </label>
+                                    <input pInputText
+                                           id="email"
+                                           formControlName="email"
+                                           type="email"
+                                           placeholder="seu@email.com"
+                                           class="w-full" />
+                                </div>
+
+                                <div>
+                                    <label for="phone"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Telefone
+                                    </label>
+                                    <input pInputText
+                                           id="phone"
+                                           formControlName="phone"
+                                           type="tel"
+                                           placeholder="(11) 99999-9999"
+                                           class="w-full" />
+                                </div>
+                            </div>
+
+                            <!-- Coluna 2 -->
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="department"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Departamento
+                                    </label>
+                                    <input pInputText
+                                           id="department"
+                                           formControlName="department"
+                                           type="text"
+                                           placeholder="Seu departamento"
+                                           class="w-full" />
+                                </div>
+
+                                <div>
+                                    <label for="role"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Cargo
+                                    </label>
+                                    <input pInputText
+                                           id="role"
+                                           formControlName="role"
+                                           type="text"
+                                           placeholder="Seu cargo/função"
+                                           class="w-full" />
+                                </div>
+
+                                <div>
+                                    <label for="password"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Senha *
+                                    </label>
+                                    <p-password
+                                        id="password"
+                                        formControlName="password"
+                                        placeholder="Senha (mín. 4 caracteres)"
+                                        [toggleMask]="true"
+                                        [fluid]="true"
+                                        [feedback]="true">
+                                    </p-password>
+                                </div>
+
+                                <div>
+                                    <label for="confirmPassword"
+                                           class="block text-surface-900 dark:text-surface-0 text-sm font-medium mb-2">
+                                        Confirmar Senha *
+                                    </label>
+                                    <p-password
+                                        id="confirmPassword"
+                                        formControlName="confirmPassword"
+                                        placeholder="Confirme sua senha"
+                                        [toggleMask]="true"
+                                        [fluid]="true"
+                                        [feedback]="false">
+                                    </p-password>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-xs text-surface-500 dark:text-surface-400 mb-4">
+                            * Campos obrigatórios
+                        </div>
 
                         <div class="flex flex-col gap-3">
                             <p-button
@@ -74,4 +155,3 @@
         </div>
     </div>
 </div>
-

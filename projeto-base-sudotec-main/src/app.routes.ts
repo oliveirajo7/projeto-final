@@ -1,10 +1,17 @@
 import { Routes } from '@angular/router';
-import { Notfound } from '@/pages/notfound/notfound';
-import { authGuard } from '@/guards/auth.guard';
+import { Login } from './app/pages/auth/login/login';
+import { Register } from './app/pages/auth/register/register';
+import { Home } from './app/pages/home/home';
+import { AuthGuard } from './app/guards/auth.guard';
 
-export const appRoutes: Routes = [
-    { path: '', loadChildren: () => import('./app/pages/auth/auth.routes').then((m) => m.default) },
-    { path: 'home', loadChildren: () => import('./app/pages/home/home.routes').then((m) => m.homeRoutes), canActivate: [authGuard] },
-    { path: 'notfound', component: Notfound },
-    { path: '**', redirectTo: '/notfound' }
+export const routes: Routes = [
+    { path: 'login', component: Login },
+    { path: 'register', component: Register },
+    { 
+        path: 'home', 
+        component: Home,
+        canActivate: [AuthGuard] // Se tiver guard de autenticação
+    },
+    { path: '', redirectTo: '/login', pathMatch: 'full' },
+    { path: '**', redirectTo: '/login' }
 ];

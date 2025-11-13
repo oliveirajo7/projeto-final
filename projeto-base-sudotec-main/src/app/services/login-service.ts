@@ -1,29 +1,47 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { Observable, map } from 'rxjs';
 import { AuthModel, LoginResponse, UserData } from '@/models/auth.model';
-import { map, Observable } from 'rxjs';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class LoginService {
     private loginApi: string = 'http://localhost:3000/auth';
-
-    http = inject(HttpClient);
+    private http = inject(HttpClient);
 
     login(loginInput: AuthModel): Observable<UserData> {
-        const credentials = `${loginInput.username}:${loginInput.password}`;
-        const encodedCredentials = btoa(credentials);
-
-        const headers = new HttpHeaders({
-            Authorization: `Basic ${encodedCredentials}`
+        console.log('🔐 Enviando login para:', this.loginApi + '/login');
+        console.log('📝 Credenciais recebidas:', { 
+            username: loginInput.username, 
+            password: '***' 
         });
 
-        return this.http.post<LoginResponse>(this.loginApi + '/login', {}, { headers }).pipe(
-            map((response) => ({
-                id: response.user.id,
-                username: response.user.username,
-                isAdmin: response.user.isAdmin,
-                token: encodedCredentials
-            }))
+        // Limpar e preparar as credenciais
+        const username = loginInput.username.trim();
+        const password = loginInput.password;
+
+        console.log('🧹 Credenciais limpas:', { username, password: '***' });
+
+        // Criar token Basic Auth manualmente
+        const token = btoa(`${username}:${password}`);
+        console.log('🔑 Token Basic Auth gerado:', token);
+
+        // Fazer a requisição com o body vazio e headers de autenticação
+        return this.http.post<LoginResponse>(
+            `${this.loginApi}/login`, 
+            {}, // Body vazio
+            {
+                headers: {
+                    'Authorization': `Basic ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        ).pipe(
+            map(response => {
+                console.log('✅ Login bem-sucedido:', response);
+                return response.user;
+            })
         );
     }
 }
